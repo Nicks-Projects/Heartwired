@@ -11,7 +11,7 @@ const DIALOGUE = [
   "",
   "When out of nowhere she blinked and was gone from her room, instead just a pitch black room. No lights, no vision, or anything from her room!",
   "",
-  "Where could she have gone, what could have happened..?"
+  "Where could she have gone, what could have happened...?"
 ];
 
 let currentLine = 0;
@@ -20,8 +20,8 @@ let typingDone = false;
 let skipTypeFlag = false;
 let prompt;
 
-// Utility
 function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
 function renderPrompt(msg) {
   if (!prompt) {
     prompt = document.createElement("div");
@@ -32,7 +32,6 @@ function renderPrompt(msg) {
 }
 function clearPrompt() { if (prompt) prompt.innerText = ''; }
 
-// Monitor Animation
 async function playMonitorIntro() {
   monitorWrapper.style.opacity = "1";
   await sleep(900);
@@ -54,7 +53,6 @@ async function playMonitorIntro() {
   await sleep(900);
 }
 
-// Typewriter dialogue
 async function typeWriterLine(line) {
   isTyping = true; typingDone = false; skipTypeFlag = false;
   typewriterContainer.innerHTML = '<span id="main-line"></span>';
@@ -121,21 +119,17 @@ async function doDialogue() {
 async function playGirlFloorSequence() {
   // Make sure floor is shown, standing is hidden
   playerFloor.style.opacity = 1;
-  playerFloor.style.display = '';
   playerUp.style.opacity = 0;
-  playerUp.style.display = 'none';
   await sleep(400);
   await shake(playerFloor, 1, 22, 30);
   await sleep(90);
   await shake(playerFloor, 1, 16, 22);
   await sleep(200);
   playerFloor.style.opacity = 0;
-  playerFloor.style.display = 'none';
-  playerUp.style.display = '';
+  await sleep(120);
   playerUp.style.opacity = 1;
 }
 
-// Shake animation for sprites
 async function shake(el, times, dist, speed) {
   const orig = el.style.transform || "translate(-50%, -50%)";
   for (let i = 0; i < times; ++i) {
@@ -148,23 +142,30 @@ async function shake(el, times, dist, speed) {
 }
 
 async function main() {
-  // Initial State: sprites & fade hidden
-  playerFloor.style.opacity = 0; playerFloor.style.display = "none";
-  playerUp.style.opacity = 0; playerUp.style.display = "none";
-  typewriterContainer.style.opacity = 0; whiteFade.style.opacity = 0;
+  // Start: everything hidden except monitor for intro
+  monitorWrapper.style.opacity = 0;
+  screen.style.opacity = 0;
+  whiteFade.style.opacity = 0;
+  playerFloor.style.opacity = 0;
+  playerUp.style.opacity = 0;
+  typewriterContainer.style.opacity = 0;
 
+  // MONITOR
   await playMonitorIntro();
+
+  // DIALOGUE
   await doDialogue();
   typewriterContainer.style.opacity = 0;
 
-  // Fade to white, then show girl on floor, then run animation
+  // WHITE FADE
   whiteFade.style.transition = 'opacity 1.1s linear';
   whiteFade.style.opacity = 1;
   await sleep(1000);
   whiteFade.style.transition = 'opacity 1.1s linear';
   whiteFade.style.opacity = 0;
-  await sleep(800);
+  await sleep(600);
 
+  // Girl floor (shake, then standing)
   await playGirlFloorSequence();
 }
 main();
