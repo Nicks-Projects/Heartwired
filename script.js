@@ -115,7 +115,6 @@ async function doDialogue() {
   }
 }
 
-// Girl floor, shake, stand sequence
 async function playGirlFloorSequence() {
   // Make sure floor is shown, standing is hidden
   playerFloor.style.opacity = 1;
@@ -128,6 +127,8 @@ async function playGirlFloorSequence() {
   playerFloor.style.opacity = 0;
   await sleep(120);
   playerUp.style.opacity = 1;
+  await sleep(2000); // wait 2 seconds after standing up
+  window.location.href = "container.html";
 }
 
 async function shake(el, times, dist, speed) {
@@ -165,7 +166,7 @@ async function main() {
   whiteFade.style.opacity = 0;
   await sleep(600);
 
-  // Girl floor (shake, then standing)
+  // Girl floor (shake, then standing, then redirect)
   await playGirlFloorSequence();
 }
 main();
