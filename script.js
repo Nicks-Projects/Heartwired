@@ -11,7 +11,7 @@ const DIALOGUE = [
   "",
   "When out of nowhere she blinked and was gone from her room, instead just a pitch black room. No lights, no vision, or anything from her room!",
   "",
-  "Where could she have gone, what could have happened...?"
+  "Where could she have gone, what could have happened..?"
 ];
 
 let currentLine = 0;
