@@ -2,53 +2,108 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Container Room - Heartwired</title>
+  <title>Container Room - Lever, GIFs, Boundary Bounce, Fade</title>
   <style>
-    body { background:black; margin:0; }
-    #game-container { position:relative; width:800px; height:600px; margin:30px auto; background:black; }
-    canvas { display:block; background:#000; }
+    body {
+      margin: 0;
+      background: #000;
+    }
+    #game-container {
+      position: relative;
+      width: 800px; height: 600px;
+      margin: 30px auto;
+      background: #000;
+      overflow: hidden;
+      box-shadow: 0 0 20px #0007;
+    }
+    #game-canvas {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: transparent;
+      z-index: 1;
+      pointer-events: none;
+    }
+    #forest-bg {
+      position: absolute; left: 0; top: 0; width: 800px; height: 600px;
+      z-index: 2;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.5s cubic-bezier(.42,0,.58,1.0);
+    }
+    #player-sprite {
+      position: absolute;
+      width: 72px; height: 96px;
+      z-index: 10;
+      image-rendering: pixelated;
+      transition: left 0.06s, top 0.06s;
+      pointer-events: none;
+    }
+    #lever-img {
+      position: absolute;
+      left: 0px;
+      top: 270px;
+      width: 85px;
+      height: 67px;
+      z-index: 20;
+      display: none;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    #lever-img.flipped {
+      transform: scaleY(-1);
+    }
     #dialogue-box {
-      position:absolute; left:50%; bottom:36px; transform:translateX(-50%);
+      position: absolute; left:50%; bottom:36px; transform:translateX(-50%);
       width:70%; min-height:52px; border-radius:8px;
       background:rgba(0,0,0,0.8); color:#fff; padding:18px;
-      text-align:center; font-family:monospace; font-size:1.2em; display:none; z-index:10;
+      text-align:center; font-family:monospace; font-size:1.2em; display:none; z-index:50;
       border:2px solid #fff; text-shadow:1px 2px #000;
     }
-    #console { display:none; position:absolute; top:60px; left:50%; width:340px; transform:translateX(-50%);
-      background:#111; color:#0fa; border:2px solid #333; border-radius:7px; z-index:11;
+    #console { display: none; position: absolute; top: 60px; left: 50%;
+      width: 340px; transform: translateX(-50%);
+      background: #111; color: #0fa; border: 2px solid #333; border-radius: 7px; z-index:50;
     }
-    #console input { width:96%; background:#222; border:0; color:#6d6; padding:8px; font-size:1em; }
-    #console-output { font-size:0.97em; min-height:16px; margin-top:5px;}
+    #console input { width: 96%; background: #222; border: 0; color: #6d6;
+      padding: 8px; font-size: 1em;
+    }
+    #console-output { font-size: 0.97em; min-height: 16px; margin-top: 5px;}
   </style>
 </head>
 <body>
-  <div id="game-container">
-    <canvas id="game" width="800" height="600"></canvas>
-    <img id="forest-bg"
-      src="https://img.itch.zone/aW1hZ2UvMTIxNjU4LzU2MDM4MS5wbmc=/508x254%23mb/D6fip%2B.png"
-      style="display:none; position:absolute; width:800px; height:600px; left:0; top:0; z-index:1;"
-    />
-    <img id="lever-img"
-      src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Lever_icon.svg"
-      style="display:none; position:absolute; width:46px; height:46px; z-index:3;"
-    />
-    <div id="dialogue-box"></div>
-    <div id="console">
-      <input id="console-input" placeholder="Type console command, then Enter" autocomplete="off"/>
-      <div id="console-output"></div>
-    </div>
-    <audio id="click-sound" src="https://cdn.pixabay.com/audio/2022/09/27/audio_12b0fa72c3.mp3"></audio>
+<div id="game-container">
+  <img id="forest-bg"
+       src="https://img.itch.zone/aW1hZ2UvMTIxNjU4LzU2MDM4MS5wbmc=/508x254%23mb/D6fip%2B.png"
+       alt="Forest"/>
+  <canvas id="game-canvas" width="800" height="600"></canvas>
+  <img id="player-sprite"
+       src="https://piskel-imgstore-b.appspot.com/img/543aaec2-614d-11f0-92ae-8745c3739ca1.gif"
+       alt="player"
+       style="left: 400px; top: 300px;"
+  />
+  <img id="lever-img"
+      src="https://img.itch.zone/aW1nLzIwMjQzNDA1LnBuZw==/315x250%23c/3IF%2Fkw.png"
+      alt="Lever"
+  />
+  <div id="dialogue-box"></div>
+  <div id="console">
+    <input id="console-input" placeholder="Type console command, then Enter" autocomplete="off"/>
+    <div id="console-output"></div>
   </div>
+  <audio id="click-sound" src="https://cdn.pixabay.com/audio/2022/09/27/audio_12b0fa72c3.mp3"></audio>
+</div>
 <script>
+// Sprite GIFs (ensure .gif so they animate as <img>)
 const SPRITES = {
   right: "https://piskel-imgstore-b.appspot.com/img/2f52d168-6137-11f0-9e04-8745c3739ca1.gif",
-  left: "https://piskel-imgstore-b.appspot.com/img/2f52d168-6137-11f0-9e04-8745c3739ca1.gif",
-  up:   "https://piskel-imgstore-b.appspot.com/img/66129338-614a-11f0-b814-8745c3739ca1.gif",
-  down: "https://piskel-imgstore-b.appspot.com/img/543aaec2-614d-11f0-92ae-8745c3739ca1.gif"
+  left:  "https://piskel-imgstore-b.appspot.com/img/2f52d168-6137-11f0-9e04-8745c3739ca1.gif",
+  up:    "https://piskel-imgstore-b.appspot.com/img/66129338-614a-11f0-b814-8745c3739ca1.gif",
+  down:  "https://piskel-imgstore-b.appspot.com/img/543aaec2-614d-11f0-92ae-8745c3739ca1.gif",
+  idle:  "https://piskel-imgstore-b.appspot.com/img/543aaec2-614d-11f0-92ae-8745c3739ca1.gif"
 };
+const SPRITE_SIZE = {w:72, h:96};
 
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+const playerSprite = document.getElementById('player-sprite');
 const lever = document.getElementById('lever-img');
 const dialogue = document.getElementById('dialogue-box');
 const forestbg = document.getElementById('forest-bg');
@@ -57,23 +112,52 @@ const con = document.getElementById('console');
 const conin = document.getElementById('console-input');
 const conout = document.getElementById('console-output');
 
-let player = {
-  x: 400, y: 300, vx: 0, vy: 0, speed: 2.3, dir: 'down', frame: 0, walking: false,
-  sprite: new Image(), flip: false
-};
-player.sprite.src = SPRITES.down;
+const GAME_W = 800, GAME_H = 600;
 
-let keys = {}, canMove = true, movedFor = 0, lastMoveDir = '', 
-    stoppedAt = null, lastFrame = Date.now(),
-    idle_state = 0, lever_spawned = false, lever_used = false;
+let px = 400, py = 300,
+    vx = 0, vy = 0,
+    speed = 2.4, dir = 'down', walking = false, flip = false;
+let canMove = true, movedFor = 0, lastMoveDir = '',
+    stoppedAt = null, idle_state = 0,
+    lever_spawned = false, lever_used = false,
+//    leverX = 36, leverY = 303,   // old: for lever in front of player
+    forestAlpha = 0, forestRevealing = false;
 
-// Controls
-document.addEventListener("keydown", e => {
-  if(e.key === '/') { showConsole(); e.preventDefault(); return; }
-  if(e.repeat) return;
+let keys = {};
+
+// Sprite updating
+function setSprite(dir_name) {
+  if(dir_name === "left") {
+    playerSprite.src = SPRITES.left;
+    playerSprite.style.transform = "scaleX(-1)";
+  } else {
+    playerSprite.src = SPRITES[dir_name];
+    playerSprite.style.transform = "";
+  }
+}
+
+function updateSpritePos() {
+  // Stand upright/higher
+  playerSprite.style.left = `${Math.round(px - SPRITE_SIZE.w/2)}px`;
+  playerSprite.style.top  = `${Math.round(py - SPRITE_SIZE.h*0.72)}px`;
+}
+
+// Dialogue
+function showDialogue(text){
+  dialogue.style.display="block";
+  dialogue.innerText=text;
+}
+function hideDialogue(){
+  dialogue.style.display="none";
+}
+
+// Console
+document.addEventListener('keydown', e => {
+  if (e.key === '/') { showConsole(); e.preventDefault(); return; }
+  if (con.style.display === "block") return;
   keys[e.key.toLowerCase()] = true;
 });
-document.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
+document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 conin && conin.addEventListener("keydown", e=>{
   if(e.key==='Escape'){hideConsole();return;}
   if(e.key==='Enter'){
@@ -86,71 +170,83 @@ conin && conin.addEventListener("keydown", e=>{
     conin.value="";
   }
 });
-
 function showConsole(){
   con.style.display = "block"; conin.value=""; conout.textContent="";
   conin.focus(); canMove = false;
 }
 function hideConsole(){ con.style.display = "none"; canMove = true; }
 
-// ==== Drawing
-function drawPlayer() {
-  ctx.save();
-  if(player.flip) {
-    ctx.translate(player.x+48, player.y-48);
-    ctx.scale(-1,1);
-    ctx.drawImage(player.sprite, 0, 0, 96,96);
-  } else {
-    ctx.drawImage(player.sprite, player.x-48, player.y-48, 96,96);
+// Lever logic
+function spawnLever(){
+  // Place lever at left edge, centered vertically
+  lever.style.left = `0px`;
+  lever.style.top = `${(GAME_H-67)/2}px`;
+  lever.style.display = "";
+  lever.classList.remove('flipped');
+  lever_spawned = true;
+}
+
+// Clicking lever flips it upside down and triggers forest fade
+lever.onclick = function() {
+  // Flip lever
+  lever.classList.toggle('flipped');
+  if (!lever_used) {
+    lever_used = true;
+    clickSound.play();
+    forestRevealing = true;
+    forestbg.style.opacity = 1;
+    showDialogue("You are in a forest now.");
+    setTimeout(hideDialogue,1700);
   }
-  ctx.restore();
+};
+
+// Movement, bounce, logic
+function checkBordersAndBounce() {
+  let bounced = false;
+  const minX = SPRITE_SIZE.w/2, maxX = GAME_W-SPRITE_SIZE.w/2;
+  const minY = SPRITE_SIZE.h*0.72, maxY = GAME_H-SPRITE_SIZE.h*0.28;
+  if(px < minX)    { px = minX+5; bounced = true; vx = Math.abs(vx)*0.4; }
+  if(px > maxX)    { px = maxX-5; bounced = true; vx = -Math.abs(vx)*0.4; }
+  if(py < minY)    { py = minY+5; bounced = true; vy = Math.abs(vy)*0.4; }
+  if(py > maxY)    { py = maxY-5; bounced = true; vy = -Math.abs(vy)*0.4; }
 }
 
-function draw() {
-  ctx.clearRect(0, 0, 800, 600);
-  // If forest background is shown, draw under everything
-  if(forestbg.style.display!=="none"){ctx.drawImage(forestbg, 0, 0, 800, 600);}
-  drawPlayer();
-}
-
-// ==== Main Update
+let lastFrame = Date.now();
 function update(){
-  let now = Date.now(), dt = (now-lastFrame)/1000;
+  let now = Date.now(), dt = (now-lastFrame)/1000 || 1/60;
   lastFrame = now;
-  let prev_x = player.x, prev_y = player.y;
-  player.walking = false;
-  let wasMoving = (player.vx!==0||player.vy!==0);
+  walking = false;
+
   if(canMove && !lever_used){
-    // RPG Movement
-    let vx=0,vy=0,ndir=player.dir, anyMove=false;
-    if(keys['arrowup']||keys['w']) vy--, ndir='up', anyMove=true;
-    if(keys['arrowdown']||keys['s']) vy++, ndir='down', anyMove=true;
-    if(keys['arrowleft']||keys['a']) vx--, ndir='left', anyMove=true;
-    if(keys['arrowright']||keys['d']) vx++, ndir='right', anyMove=true;
+    let tvx=0,tvy=0, ndir = dir, anyMove=false;
+    if(keys['arrowup']||keys['w']){   tvy--, ndir='up', anyMove=true; }
+    if(keys['arrowdown']||keys['s']){ tvy++, ndir='down', anyMove=true; }
+    if(keys['arrowleft']||keys['a']){ tvx--, ndir='left', anyMove=true; }
+    if(keys['arrowright']||keys['d']){tvx++, ndir='right', anyMove=true; }
 
-    // walking for 3s in one direction blocks further walk for 0.7s
-    if(anyMove && ndir === lastMoveDir) movedFor += dt;
+    if(anyMove && ndir===lastMoveDir) movedFor += dt;
     else { movedFor=0; lastMoveDir=ndir; }
-    if(movedFor > 3) { canMove=false; movedFor=0; setTimeout(()=>canMove=true,700); return;}
-    
-    // walk and animate sprite
-    player.vx = vx*player.speed; player.vy = vy*player.speed;
-    player.x = Math.max(48, Math.min(800-48, player.x+player.vx));
-    player.y = Math.max(48, Math.min(600-48, player.y+player.vy));
+    if(movedFor > 3){ canMove=false; movedFor=0; setTimeout(()=>canMove=true,700); return;}
 
-    if(vx!==0||vy!==0){
-      player.walking = true;
-      player.dir = ndir;
-      player.sprite.src = SPRITES[ndir];
-      player.flip = (ndir==='left');
+    vx = tvx * speed; vy = tvy * speed;
+    px += vx; py += vy;
+
+    checkBordersAndBounce();
+
+    if(tvx!==0||tvy!==0){
+      walking = true;
+      dir = ndir;
+      setSprite(dir);
       stoppedAt = null;
-    }else if(!player.walking){
+    } else if(!walking) {
       if(!stoppedAt) stoppedAt = now;
+      setSprite("idle");
     }
   }
+  updateSpritePos();
 
-  // Idle / Not moving
-  if(!player.walking && !lever_spawned){
+  // Idle dialog and lever spawn
+  if(!walking && !lever_spawned){
     const idleElapsed = stoppedAt ? (now-stoppedAt)/1000 : 0;
     if(idle_state < 1 && idleElapsed>10){
       showDialogue("You waiting for something?");
@@ -161,52 +257,28 @@ function update(){
     }else if(idle_state < 3 && idleElapsed>18){
       showDialogue("OKAY, okay... Fine! We'll have it your way!");
       idle_state = 3;
-      setTimeout(()=>{ dialogue.style.display="none"; addLever(); },1400);
+      setTimeout(()=>{ hideDialogue(); spawnLever(); },1300);
     }
   }
-
-  // Lever interaction
-  if(lever_spawned && !lever_used){
-    // Check player is pressed against it
-    const l = lever.getBoundingClientRect(), c = canvas.getBoundingClientRect();
-    let lx = lever.offsetLeft+23, ly = lever.offsetTop+23;
-    let dx = Math.abs(player.x-lx), dy = Math.abs(player.y-ly);
-    if(dx<44 && dy<44 && keys[' ']){
-      // Use lever
-      lever_used = true;
-      clickSound.play();
-      lever.style.display = "none";
-      // Reveal forest background
-      forestbg.style.display = "block";
-      showDialogue("You are in a forest now.");
-      setTimeout(()=>{ dialogue.style.display="none"; },1200);
-    }
+  // forest fade in
+  if(forestRevealing && forestAlpha<1){
+    forestAlpha = Math.min(1, forestAlpha + dt/1.3);
+    if(forestAlpha>=1) forestRevealing = false;
+    forestbg.style.opacity = forestAlpha;
   }
 
-  draw();
   requestAnimationFrame(update);
 }
 
-// ==== Lever logic
-function addLever(){
-  let lx = player.x-23, ly = player.y+44;
-  lever.style.left = `${lx}px`; lever.style.top = `${ly}px`;
-  lever.style.display = "";
-  lever_spawned = true;
-}
-
-// ==== Dialogue
-function showDialogue(text){
-  dialogue.style.display="block"; dialogue.innerText=text;
-}
-
+// App Start
 window.onload = ()=>{
-  // Initial setup
-  forestbg.style.display="none";
-  lever.style.display="none";
-  dialogue.style.display="none";
-  player.sprite.src = SPRITES.down;
-  lastFrame = Date.now();
+  forestbg.style.opacity = 0;
+  lever.style.display = "none";
+  dialogue.style.display = "none";
+  setSprite("idle");
+  forestAlpha = 0;
+  px=400; py=300;
+  updateSpritePos();
   update();
 };
 </script>
