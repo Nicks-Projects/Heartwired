@@ -18,20 +18,31 @@ let currentLine = 0;
 let isTyping = false;
 let typingDone = false;
 let skipTypeFlag = false;
-let prompt;
+let promptElement = null; // Renamed for clarity
 
-function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
-
-function renderPrompt(msg) {
-  if (!prompt) {
-    prompt = document.createElement("div");
-    prompt.setAttribute('id', 'prompt');
-    typewriterContainer.appendChild(prompt);
-  }
-  prompt.innerText = msg;
+// Utility function for delays
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
-function clearPrompt() { if (prompt) prompt.innerText = ''; }
 
+// Function to render the prompt message
+function renderPrompt(msg) {
+  if (!promptElement) {
+    promptElement = document.createElement("div");
+    promptElement.setAttribute('id', 'prompt');
+    typewriterContainer.appendChild(promptElement);
+  }
+  promptElement.innerText = msg;
+}
+
+// Function to clear the prompt message
+function clearPrompt() {
+  if (promptElement) {
+    promptElement.innerText = '';
+  }
+}
+
+// Animation sequence for the monitor intro
 async function playMonitorIntro() {
   monitorWrapper.style.opacity = "1";
   await sleep(900);
@@ -39,7 +50,7 @@ async function playMonitorIntro() {
   await sleep(500);
   for (let j = 0; j < 5; ++j) {
     screen.style.opacity = Math.random() < 0.6 ? "0.32" : "1";
-    await sleep(70 + Math.random()*120);
+    await sleep(70 + Math.random() * 120);
   }
   screen.style.opacity = "1";
   await sleep(190);
@@ -53,18 +64,28 @@ async function playMonitorIntro() {
   await sleep(900);
 }
 
+// Types out a single line of dialogue with skip functionality
 async function typeWriterLine(line) {
-  isTyping = true; typingDone = false; skipTypeFlag = false;
+  isTyping = true;
+  typingDone = false;
+  skipTypeFlag = false;
   typewriterContainer.innerHTML = '<span id="main-line"></span>';
   clearPrompt();
-  if (line.trim() !== "") renderPrompt("[SPACE] Continue  |  [ENTER] Skip");
+  if (line.trim() !== "") {
+    renderPrompt("[SPACE] Continue  |  [ENTER] Skip");
+  }
   const mainLine = typewriterContainer.querySelector('#main-line');
   let idx = 0;
 
-  function handleSkip(e) { if (isTyping && e.key === "Enter") skipTypeFlag = true; }
+  const handleSkip = (e) => {
+    if (isTyping && e.key === "Enter") {
+      skipTypeFlag = true;
+    }
+  };
   document.addEventListener("keydown", handleSkip);
+
   return new Promise(resolve => {
-    function typeNext() {
+    const typeNext = () => {
       if (skipTypeFlag) {
         mainLine.textContent = line;
         isTyping = false;
@@ -84,39 +105,48 @@ async function typeWriterLine(line) {
         renderPrompt("[SPACE] Continue");
         resolve();
       }
-    }
+    };
     typeNext();
   });
 }
-function showNextLine() {
+
+// Displays the next line of dialogue
+async function showNextLine() {
   if (currentLine < DIALOGUE.length) {
-    return typeWriterLine(DIALOGUE[currentLine++]);
+    await typeWriterLine(DIALOGUE[currentLine++]);
+    return true;
   }
-  return Promise.resolve(false);
+  return false;
 }
+
+// Handles the entire dialogue sequence
 async function doDialogue() {
   currentLine = 0;
   typewriterContainer.innerHTML = "";
   typewriterContainer.style.opacity = 1;
-  while (currentLine < DIALOGUE.length) {
+  let hasMoreLines = true;
+  while (hasMoreLines) {
     await showNextLine();
-    await new Promise(res=>{
-      function onSpace(e) {
+    await new Promise(resolve => {
+      const onSpace = (e) => {
         if ((e.key === ' ' || e.code === 'Space') && !isTyping && typingDone) {
           document.removeEventListener("keydown", onSpace);
           clearPrompt();
-          res();
+          resolve();
         }
-      }
+      };
       document.addEventListener('keydown', onSpace);
     });
-    if (DIALOGUE[currentLine-1].trim() !== '')
+    if (currentLine > 0 && DIALOGUE[currentLine - 1].trim() !== '') {
       typewriterContainer.innerHTML = "";
+    }
+    hasMoreLines = currentLine < DIALOGUE.length;
   }
 }
 
+// Animation sequence for the girl waking up
 async function playGirlFloorSequence() {
-  // Make sure floor is shown, standing is hidden
+  // Ensure floor is shown, standing is hidden
   playerFloor.style.opacity = 1;
   playerUp.style.opacity = 0;
   await sleep(400);
@@ -127,23 +157,25 @@ async function playGirlFloorSequence() {
   playerFloor.style.opacity = 0;
   await sleep(120);
   playerUp.style.opacity = 1;
-  await sleep(2000); // wait 2 seconds after standing up
+  await sleep(2000); // Wait 2 seconds after standing up
   window.location.href = "container.html";
 }
 
+// Utility function to shake an element
 async function shake(el, times, dist, speed) {
   const orig = el.style.transform || "translate(-50%, -50%)";
   for (let i = 0; i < times; ++i) {
-    el.style.transform = "translate(-50%, -50%) translateX("+(-dist)+"px)";
+    el.style.transform = `${orig} translateX(${-dist}px)`;
     await sleep(speed);
-    el.style.transform = "translate(-50%, -50%) translateX("+(dist)+"px)";
+    el.style.transform = `${orig} translateX(${dist}px)`;
     await sleep(speed);
   }
   el.style.transform = orig;
 }
 
+// Main function to orchestrate the entire sequence
 async function main() {
-  // Start: everything hidden except monitor for intro
+  // Initial setup: hide elements except for monitor intro
   monitorWrapper.style.opacity = 0;
   screen.style.opacity = 0;
   whiteFade.style.opacity = 0;
@@ -151,14 +183,14 @@ async function main() {
   playerUp.style.opacity = 0;
   typewriterContainer.style.opacity = 0;
 
-  // MONITOR
+  // Play monitor intro
   await playMonitorIntro();
 
-  // DIALOGUE
+  // Play dialogue
   await doDialogue();
   typewriterContainer.style.opacity = 0;
 
-  // WHITE FADE
+  // White fade transition
   whiteFade.style.transition = 'opacity 1.1s linear';
   whiteFade.style.opacity = 1;
   await sleep(1000);
@@ -166,7 +198,8 @@ async function main() {
   whiteFade.style.opacity = 0;
   await sleep(600);
 
-  // Girl floor (shake, then standing, then redirect)
+  // Play girl floor sequence and redirect
   await playGirlFloorSequence();
 }
+
 main();
