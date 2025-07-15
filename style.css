@@ -14,7 +14,6 @@ body {
   user-select: none;
 }
 
-/* Monitor and animation */
 #monitor-wrapper {
   display: flex;
   justify-content: center;
@@ -51,7 +50,6 @@ body {
   transition: background 0.18s, opacity 0.22s;
 }
 
-/* White Fade */
 #white-fade {
   position: fixed;
   top: 0;
@@ -61,7 +59,7 @@ body {
   background: #fff;
   z-index: 20;
   opacity: 0; /* hidden at start */
-  transition: opacity 1.2s linear;
+  transition: opacity 1.1s linear;
   pointer-events: none;
 }
 
@@ -92,11 +90,9 @@ body {
   pointer-events: none;
 }
 #player-up {
-  /* more vertical -- not squished */
   transform: translate(-50%, -50%) scaleX(0.85) scaleY(1.18);
 }
 
-/* Dialogue */
 #typewriter-container {
   position: absolute;
   left: 50%;
